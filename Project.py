@@ -16,9 +16,14 @@ class MyWidget(QMainWindow):
         self.initui()
 
         # Переменные и надстройки
-        self.color = QColor(100, 100, 100)
-        self.i = 0
-        self.leng = ''
+        self.text_color = QColor(100, 100, 100)
+        self.text_font_size = 144
+        
+        # Задание размера текста и цвета
+        self.textEdit.setTextColor(self.text_color)
+        self.textEdit.setFontPointSize(self.text_font_size)
+        
+        self.current_pos = 0
         self.keys = 0
         self.error_keys = 0
         self.text = ''
@@ -72,14 +77,24 @@ class MyWidget(QMainWindow):
         self.tabWidget.tabBarClicked.connect(self.select_data)
         self.comboBox_result.currentTextChanged.connect(self.select_data)
 
+    def changing_text(self):
+        self.text = ' '.join(self.text.split())
+
     def select(self):
+
         self.text = self.res[self.listWidget.currentRow()][0]
-        self.i = 0
+        self.changing_text()
+
+        self.beginButton.setText('Начать')
+
+        self.current_pos = 0
+        self.keys = 0
+        self.error_keys = 0
 
     def random_text(self):  #
         self.listWidget.setCurrentRow(randint(0, len(self.res) - 1))
 
-    def text_list_vivod(self):  # Функция вывода названий текстрв из БД текстов
+    def text_list_vivod(self):  # Функция вывода названий текстов из БД текстов
         self.listWidget.clear()
         self.res = self.connection_text.cursor().execute("""SELECT * FROM RUS_TEXT""").fetchall()
         self.selectButton.setEnabled(False)
@@ -131,16 +146,15 @@ class MyWidget(QMainWindow):
 
     def keyPressEvent(self, event):  # Работа с клавиатурой
         if self.endButton.isEnabled():
-            # Задание размера текста и цвета
-            self.textEdit.setTextColor(self.color)
-            self.textEdit.setFontPointSize(144)
-
-            if self.i != len(self.text):
+            if self.current_pos < len(self.text) - 1:
                 # Сравнение введённой клавиши с правильной
-                if event.text() == self.text[self.i]:
-                    self.i += 1
+                if event.text() == self.text[self.current_pos]:
+                    self.current_pos += 1
                     self.keys += 1
+
+                    # Вывод текста
                     self.textEdit.setStyleSheet("QTextEdit {background-color:rgba(255, 255, 255, 255)}")
+                    self.textEdit.setText(self.text[self.current_pos:])
                 # Проверка вспомогательных клавиш (shift, control)
                 elif event.key() not in (Qt.Key_Shift, Qt.Key_Control):
                     # Маркирование ошибки при введении текста
@@ -148,30 +162,30 @@ class MyWidget(QMainWindow):
                     self.textEdit.setStyleSheet("QTextEdit {background-color:rgba(255, 0, 0, 120)}")
             else:
                 # Если текст закончится
-                self.errorText.setText('Текст закончился')
+                self.textEdit.setText('Текст закончился')
+                self.beginButton.setText('Начать')
                 self.end()
-                self.i = 0
-                self.keys = 0
-                self.error_keys = 0
+                self.current_pos = 0
 
-            # Вывод текста
-            self.textEdit.setText(self.text[self.i:])
-            self.scoreinfLabel.setText(f'Cимволов: верных: {self.i} неверных: {self.error_keys}')
+
+            self.scoreinfLabel.setText(f'Cимволов: верных: {self.keys} неверных: {self.error_keys}')
 
     def begin(self):    # Кнопка начать
         # Проверка текста на пустоту
         if not self.text:
             self.errorText.setText('Вы не выбрали текст')
+            return None
 
         # Отчистка поля с результатом  и запуск таймера
         self.errorText.setText('')
-        self.beginTime = dt.datetime.now()
-        self.textEdit.setTextColor(self.color)
-        self.textEdit.setFontPointSize(144)
+        if self.beginButton.text() == 'Начать':
+            self.beginTime = dt.datetime.now()
 
         # Вывод текста заново если позиция курсора равна 0
-        if self.i == 0:
+        if self.current_pos == 0:
             self.textEdit.setText(self.text)
+            self.keys = 0
+            self.error_keys = 0
 
         # Выключение кнопок и смена цветов
         self.comboBox.setEnabled(False)
@@ -183,14 +197,14 @@ class MyWidget(QMainWindow):
 
         self.beginButton.setStyleSheet("color: black; background-color: rgba(255, 255, 255, 255)")
         self.beginButton.setEnabled(False)
+        self.beginButton.setText('Продолжить')
 
         # Убрать фокус
         self.setFocus()
 
     def end(self):     # Кнопка закончить
         self.results = self.result()
-        self.keys = 0
-        self.error_keys = 0
+
         self.textEdit.setStyleSheet('color:black')
         self.errorText.setText(str(self.results) + ' знаков в минут')
 
@@ -211,9 +225,14 @@ class MyWidget(QMainWindow):
 
     def new_text(self):      # Пользовательский текст
         try:
+            # Добавления пользовательского файла
             self.fname = QFileDialog.getOpenFileName(self, 'Выбрать текст', '', 'Текст (*.txt)')[0]
-            f = open(self.fname, encoding='utf8')
-            self.new_text = f.read()
+
+            # Открытие файл
+            with open(self.fname, encoding='utf8') as f:
+                self.new_text = f.read()
+
+            # Выбор языка текста
             if self.comboBox.currentText() == 'ABC':
                 self.connection_text.cursor().execute("INSERT INTO ENG_TEXT VALUES(?, ?)",
                                                       (self.new_text, self.new_text[:20]))
@@ -221,7 +240,6 @@ class MyWidget(QMainWindow):
                 self.connection_text.cursor().execute("INSERT INTO RUS_TEXT VALUES(?, ?)",
                                                       (self.new_text, self.new_text[:20]))
             self.connection_text.commit()
-            f.close()
             self.text_list_vivod()
         except FileNotFoundError:
             self.errorText.setText('Нет такого файла')
