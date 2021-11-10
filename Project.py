@@ -235,10 +235,10 @@ class MyWidget(QMainWindow):
             # Выбор языка текста
             if self.comboBox.currentText() == 'ABC':
                 self.connection_text.cursor().execute("INSERT INTO ENG_TEXT VALUES(?, ?)",
-                                                      (self.new_text, self.new_text[:20]))
+                                                      (self.new_text, self.fname))
             else:
                 self.connection_text.cursor().execute("INSERT INTO RUS_TEXT VALUES(?, ?)",
-                                                      (self.new_text, self.new_text[:20]))
+                                                      (self.new_text, self.fname))
             self.connection_text.commit()
             self.text_list_vivod()
         except FileNotFoundError:
