@@ -28,13 +28,13 @@ class MyWidget(QMainWindow):
         self.error_keys = 0
         self.text = ''
         self.comboBox.setStyleSheet("color: white;"
-                                    " background-color: rgba(100, 149, 237, 255);"
-                                    " selection-color: black;"
+                                    "background-color: rgba(100, 149, 237, 255);"
+                                    "selection-color: black;"
                                     "selection-background-color: white")
         self.comboBox_result.setStyleSheet("color: white;"
-                                           " background-color: rgba(100, 149, 237, 255);"
-                                           " selection-color: black;"
-                                           "selection-background-color: white")
+                                        "background-color: rgba(100, 149, 237, 255);"
+                                        "selection-color: black;"
+                                        "selection-background-color: white")
 
     def initui(self):
         # Загружаем дизайн
@@ -137,7 +137,7 @@ class MyWidget(QMainWindow):
     def save(self):  # Сохранение результатов
         try:
             self.connection.cursor().execute("INSERT INTO result VALUES(?, ?)",
-                                             (self.beginTime.strftime('%Y:%m:%d %H:%M:%S'), self.results))
+                                            (self.beginTime.strftime('%Y:%m:%d %H:%M:%S'), self.results))
             self.connection.commit()
 
             self.pushButtonSave.setEnabled(False)
@@ -235,10 +235,10 @@ class MyWidget(QMainWindow):
             # Выбор языка текста
             if self.comboBox.currentText() == 'ABC':
                 self.connection_text.cursor().execute("INSERT INTO ENG_TEXT VALUES(?, ?)",
-                                                      (self.new_text, self.fname))
+                                                    (self.new_text, self.fname))
             else:
                 self.connection_text.cursor().execute("INSERT INTO RUS_TEXT VALUES(?, ?)",
-                                                      (self.new_text, self.fname))
+                                                    (self.new_text, self.fname))
             self.connection_text.commit()
             self.text_list_vivod()
         except FileNotFoundError:
